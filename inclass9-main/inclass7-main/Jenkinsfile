@@ -1,0 +1,84 @@
+
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    tools {
+        maven 'Maven'
+    }
+
+    environment {
+        LOCAL_IMAGE = 'temperature-converter'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat 'mvn -B clean verify'
+            }
+        }
+
+        stage('Code Coverage') {
+            steps {
+                bat 'mvn -B jacoco:report'
+            }
+        }
+
+        stage('Publish Test Results') {
+            steps {
+                junit 'target/surefire-reports/*.xml'
+            }
+        }
+
+        stage('Archive Coverage Report') {
+            steps {
+                archiveArtifacts artifacts: 'target/site/jacoco/**', fingerprint: true
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker build --pull -t %LOCAL_IMAGE%:latest -t %LOCAL_IMAGE%:%BUILD_NUMBER% .'
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKERHUB_USERNAME',
+                    passwordVariable: 'DOCKERHUB_TOKEN'
+                )]) {
+                    powershell '''
+                        $dockerHubToken = $env:DOCKERHUB_TOKEN.Trim()
+                        $dockerHubToken | docker login --username $env:DOCKERHUB_USERNAME --password-stdin
+                        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+                        $repository = "$($env:DOCKERHUB_USERNAME)/temperature-converter"
+                        docker tag "$($env:LOCAL_IMAGE):latest" "${repository}:latest"
+                        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                        docker tag "$($env:LOCAL_IMAGE):$env:BUILD_NUMBER" "${repository}:$env:BUILD_NUMBER"
+                        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+                        docker push "${repository}:latest"
+                        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+                        docker push "${repository}:$env:BUILD_NUMBER"
+                        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+                        docker logout
+                    '''
+                }
+            }
+        }
+    }
+}

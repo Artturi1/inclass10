@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temperature-converter
+  labels:
+    app: temperature-converter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temperature-converter
+  template:
+    metadata:
+      labels:
+        app: temperature-converter
+    spec:
+      containers:
+        - name: temperature-converter
+          image: YOUR_DOCKERHUB_USERNAME/temperature-converter:latest
+          imagePullPolicy: Always
+          env:
+            - name: DISPLAY
+              value: "host.minikube.internal:0.0"
+            - name: TEMPERATURE_DB_PATH
+              value: "/data/measurements.db"
+          volumeMounts:
+            - name: measurement-data
+              mountPath: /data
+      volumes:
+        - name: measurement-data
+          persistentVolumeClaim:
+            claimName: temperature-converter-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: temperature-converter-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

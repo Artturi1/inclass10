@@ -1,0 +1,9 @@
+TemperatureConverter.class
+TemperatureConverterController.class
+TemperatureConverterController$1.class
+TemperatureMath.class
+MeasurementDatabase.class
+MeasurementDao$LocalizedUnit.class
+MeasurementDao$ConversionRecord.class
+TemperatureConverter$Unit.class
+MeasurementDao.class

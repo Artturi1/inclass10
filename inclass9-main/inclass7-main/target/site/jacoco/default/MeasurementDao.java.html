@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MeasurementDao.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">temperature-converter</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">MeasurementDao.java</span></div><h1>MeasurementDao.java</h1><pre class="source lang-java linenums">import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+/** JDBC access to measurement-unit translations and saved conversions. */
+public class MeasurementDao {
+    private static final String UNIT_QUERY = &quot;&quot;&quot;
+            SELECT u.unit_code, u.symbol,
+                   COALESCE(selected.unit_name, english.unit_name) AS unit_name,
+                   COALESCE(selected.description, english.description) AS description
+            FROM measurement_unit u
+            LEFT JOIN unit_translation selected
+              ON selected.unit_code = u.unit_code AND selected.language_code = ?
+            LEFT JOIN unit_translation english
+              ON english.unit_code = u.unit_code AND english.language_code = 'en'
+            ORDER BY u.unit_code
+            &quot;&quot;&quot;;
+
+    private final Connection connection;
+
+<span class="fc" id="L26">    public MeasurementDao(Connection connection) {</span>
+<span class="fc" id="L27">        this.connection = connection;</span>
+<span class="fc" id="L28">    }</span>
+
+    public List&lt;LocalizedUnit&gt; findUnits(String languageCode) throws SQLException {
+<span class="pc bpc" id="L31" title="2 of 4 branches missed.">        String language = languageCode == null || languageCode.isBlank()</span>
+<span class="pc" id="L32">                ? &quot;en&quot; : Locale.forLanguageTag(languageCode).getLanguage();</span>
+<span class="fc" id="L33">        List&lt;LocalizedUnit&gt; units = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L34">        try (PreparedStatement statement = connection.prepareStatement(UNIT_QUERY)) {</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">            statement.setString(1, language.isBlank() ? &quot;en&quot; : language);</span>
+<span class="fc" id="L36">            try (ResultSet results = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">                while (results.next()) {</span>
+<span class="fc" id="L38">                    units.add(new LocalizedUnit(</span>
+<span class="fc" id="L39">                            results.getString(&quot;unit_code&quot;),</span>
+<span class="fc" id="L40">                            results.getString(&quot;symbol&quot;),</span>
+<span class="fc" id="L41">                            results.getString(&quot;unit_name&quot;),</span>
+<span class="fc" id="L42">                            results.getString(&quot;description&quot;)));</span>
+                }
+            }
+        }
+<span class="fc" id="L46">        return List.copyOf(units);</span>
+    }
+
+    public void saveConversion(double value, String fromUnit, String toUnit,
+                               double result, String languageCode) throws SQLException {
+<span class="fc" id="L51">        String sql = &quot;INSERT INTO conversion_history&quot;</span>
+                + &quot;(input_value, from_unit, to_unit, result_value, language_code)&quot;
+                + &quot; VALUES (?, ?, ?, ?, ?)&quot;;
+<span class="fc" id="L54">        try (PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L55">            statement.setDouble(1, value);</span>
+<span class="fc" id="L56">            statement.setString(2, fromUnit);</span>
+<span class="fc" id="L57">            statement.setString(3, toUnit);</span>
+<span class="fc" id="L58">            statement.setDouble(4, result);</span>
+<span class="pc bpc" id="L59" title="1 of 4 branches missed.">            statement.setString(5, languageCode == null || languageCode.isBlank()</span>
+<span class="fc" id="L60">                    ? &quot;en&quot; : Locale.forLanguageTag(languageCode).getLanguage());</span>
+<span class="fc" id="L61">            statement.executeUpdate();</span>
+        }
+<span class="fc" id="L63">    }</span>
+
+    public List&lt;ConversionRecord&gt; findLatestConversions(int limit) throws SQLException {
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (limit &lt; 1) {</span>
+<span class="fc" id="L67">            throw new IllegalArgumentException(&quot;History limit must be positive.&quot;);</span>
+        }
+<span class="fc" id="L69">        String sql = &quot;SELECT input_value, from_unit, to_unit, result_value, language_code, converted_at &quot;</span>
+                + &quot;FROM conversion_history ORDER BY conversion_id DESC LIMIT ?&quot;;
+<span class="fc" id="L71">        List&lt;ConversionRecord&gt; records = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L72">        try (PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L73">            statement.setInt(1, limit);</span>
+<span class="fc" id="L74">            try (ResultSet results = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">                while (results.next()) {</span>
+<span class="fc" id="L76">                    records.add(new ConversionRecord(</span>
+<span class="fc" id="L77">                            results.getDouble(&quot;input_value&quot;),</span>
+<span class="fc" id="L78">                            results.getString(&quot;from_unit&quot;),</span>
+<span class="fc" id="L79">                            results.getString(&quot;to_unit&quot;),</span>
+<span class="fc" id="L80">                            results.getDouble(&quot;result_value&quot;),</span>
+<span class="fc" id="L81">                            results.getString(&quot;language_code&quot;),</span>
+<span class="fc" id="L82">                            results.getString(&quot;converted_at&quot;)));</span>
+                }
+            }
+        }
+<span class="fc" id="L86">        return List.copyOf(records);</span>
+    }
+
+<span class="fc" id="L89">    public record LocalizedUnit(String code, String symbol, String name, String description) {</span>
+        @Override
+        public String toString() {
+<span class="fc" id="L92">            return name;</span>
+        }
+    }
+
+<span class="fc" id="L96">    public record ConversionRecord(double value, String fromUnit, String toUnit,</span>
+                                   double result, String languageCode, String convertedAt) {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

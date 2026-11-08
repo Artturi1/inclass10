@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+<VBox fx:id="root" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="TemperatureConverterController" alignment="CENTER" spacing="14"
+      style="-fx-background-color: linear-gradient(to bottom right, #eff6ff, #f8fafc);">
+    <padding><Insets top="28" right="32" bottom="28" left="32"/></padding>
+    <Label text="%app.title" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #172554;"/>
+    <Label text="%language.label"/>
+    <ComboBox fx:id="languageChoice" onAction="#onLanguageChanged" maxWidth="260"/>
+    <Label text="%temperature.label"/>
+    <TextField fx:id="temperatureInput" text="32" promptText="%temperature.prompt" maxWidth="260"/>
+    <Label text="%from.label"/>
+    <ComboBox fx:id="fromUnitChoice" maxWidth="260"/>
+    <Label text="%to.label"/>
+    <ComboBox fx:id="toUnitChoice" maxWidth="260"/>
+    <Button text="%convert.button" onAction="#onConvert" defaultButton="true"
+            style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-padding: 10px 18px; -fx-background-radius: 8px;"/>
+    <Label fx:id="resultLabel" text=" "/>
+    <Label fx:id="statusLabel" text=" "/>
+        <Label text="%history.label" style="-fx-font-weight: bold;"/>
+        <ListView fx:id="historyList" maxWidth="420" prefHeight="110"/>
+</VBox>

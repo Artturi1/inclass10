@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TemperatureMath.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">temperature-converter</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">TemperatureMath.java</span></div><h1>TemperatureMath.java</h1><pre class="source lang-java linenums">/** Pure temperature-conversion rules, separated from JavaFX for reliable unit testing. */
+public final class TemperatureMath {
+    private TemperatureMath() {
+    }
+
+    public static double fahrenheitToCelsius(double fahrenheit) {
+<span class="fc" id="L7">        return (fahrenheit - 32) * 5 / 9;</span>
+    }
+
+    public static double celsiusToFahrenheit(double celsius) {
+<span class="fc" id="L11">        return (celsius * 9 / 5) + 32;</span>
+    }
+
+    public static double convert(double value, TemperatureConverter.Unit from,
+                                 TemperatureConverter.Unit to) {
+<span class="fc bfc" id="L16" title="All 2 branches covered.">        if (!Double.isFinite(value)) {</span>
+<span class="fc" id="L17">            throw new IllegalArgumentException(&quot;Temperature must be a finite number.&quot;);</span>
+        }
+<span class="fc bfc" id="L19" title="All 4 branches covered.">        if (from == null || to == null) {</span>
+<span class="fc" id="L20">            throw new IllegalArgumentException(&quot;Temperature units must not be null.&quot;);</span>
+        }
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (from == to) {</span>
+<span class="fc" id="L23">            return value;</span>
+        }
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        return from == TemperatureConverter.Unit.FAHRENHEIT</span>
+<span class="fc" id="L26">                ? fahrenheitToCelsius(value)</span>
+<span class="fc" id="L27">                : celsiusToFahrenheit(value);</span>
+    }
+
+    public static boolean isExtremeCelsius(double celsius) {
+<span class="fc bfc" id="L31" title="All 4 branches covered.">        return celsius &lt; -40 || celsius &gt; 50;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
